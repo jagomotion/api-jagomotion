@@ -7,14 +7,6 @@ const fs = require('fs');
 const path = require('path');
 const pino = require('pino');
 const { Boom } = require('@hapi/boom');
-const {
-  default: makeWASocket,
-  useMultiFileAuthState,
-  Browsers,
-  DisconnectReason,
-  fetchLatestWaWebVersion,
-  makeCacheableSignalKeyStore
-} = require('baileys');
 const config = require('./config');
 
 const sessions = new Map();
@@ -29,9 +21,29 @@ function cleanNumber(number) {
   return String(number).replace(/[^0-9]/g, '');
 }
 
+// Loader dinamis untuk memuat Baileys (ESM) di dalam CommonJS
+let baileysModule = null;
+async function getBaileys() {
+  if (!baileysModule) {
+    baileysModule = await import('baileys');
+  }
+  return baileysModule;
+}
+
 async function initSession(number) {
   const clean = cleanNumber(number);
   const sessionPath = path.join(config.PATHS.SESSIONS, clean);
+
+  // Muat Baileys secara dinamis
+  const baileys = await getBaileys();
+  const {
+    default: makeWASocket,
+    useMultiFileAuthState,
+    Browsers,
+    DisconnectReason,
+    fetchLatestWaWebVersion,
+    makeCacheableSignalKeyStore
+  } = baileys;
 
   // Jika sesi sudah ada dan sedang aktif
   if (sessions.has(clean)) {
@@ -39,7 +51,6 @@ async function initSession(number) {
     if (existing.status === 'connected') {
       return { status: 'already_connected', message: 'Sesi sudah terhubung.' };
     }
-    // Jika gantung / stuck, matikan websocket lama
     try { existing.sock?.ws?.close(); } catch (e) {}
     sessions.delete(clean);
   }
@@ -64,7 +75,7 @@ async function initSession(number) {
     msgRetryCounterCache,
     connectTimeoutMs: 60000,
     keepAliveIntervalMs: 25000,
-    browser: Browsers.ubuntu('Chrome'), // Format canonical agar pairing code diterima WA
+    browser: Browsers.ubuntu('Chrome'),
     auth: {
       creds: state.creds,
       keys: makeCacheableSignalKeyStore(state.keys, logger)
@@ -85,7 +96,6 @@ async function initSession(number) {
   return new Promise((resolve, reject) => {
     let handled = false;
 
-    // Timeout pengaman jika socket tidak kunjung merespons dalam 45 detik
     const timer = setTimeout(() => {
       if (!handled && !sock.authState.creds.registered) {
         handled = true;
@@ -99,12 +109,10 @@ async function initSession(number) {
     sock.ev.on('connection.update', async (update) => {
       const { connection, lastDisconnect, qr } = update;
 
-      // Socket siap dan butuh pairing code
       if ((connection === 'connecting' || !!qr) && !sock.authState.creds.registered && !handled) {
         handled = true;
         clearTimeout(timer);
         
-        // Delay 3 detik agar handshake websocket WA selesai sebelum kirim pairing request
         setTimeout(async () => {
           try {
             let code = await sock.requestPairingCode(clean);
@@ -122,7 +130,7 @@ async function initSession(number) {
         clearTimeout(timer);
         sessionObj.status = 'connected';
         sessionObj.pairingCode = null;
-        console.log(`[WA] Sesi ${clean} berhasil terhubung.`);
+        console.log(`[WA] Sesi ${clean} terhubung.`);
         if (!handled) {
           handled = true;
           resolve({ status: 'connected', message: 'Sesi berhasil terhubung.' });
@@ -133,7 +141,6 @@ async function initSession(number) {
         clearTimeout(timer);
         sessionObj.status = 'disconnected';
         const statusCode = new Boom(lastDisconnect?.error)?.output?.statusCode;
-        console.log(`[WA] Sesi ${clean} terputus. Kode: ${statusCode}`);
 
         const isLoggedOut = statusCode === DisconnectReason.loggedOut || statusCode === DisconnectReason.badSession;
 
@@ -143,7 +150,6 @@ async function initSession(number) {
             fs.rmSync(sessionPath, { recursive: true, force: true });
           }
         } else {
-          // Reconnect otomatis jika putus sementara
           if (sock.authState.creds.registered) {
             setTimeout(() => initSession(clean), 5000);
           }
