@@ -1,0 +1,18 @@
+{
+  "name": "jagomotion-api",
+  "version": "1.0.0",
+  "description": "API Gateway Email dan WhatsApp untuk JagoMotion",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@hapi/boom": "^10.0.1",
+    "awesome-phonenumber": "^7.3.0",
+    "baileys": "npm:@whiskeysockets/baileys@^6.7.9",
+    "cors": "^2.8.5",
+    "express": "^4.19.2",
+    "nodemailer": "^6.9.13",
+    "pino": "^8.20.0"
+  }
+}

@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JagoMotion API Gateway &middot; Panduan Pengembang</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" />
+  
+  <style>
+    :root {
+      --bg: #090b10;
+      --panel: #11141c;
+      --panel-border: #1f2430;
+      --code-bg: #0d1117;
+      --text: #e6edf3;
+      --text-muted: #8b949e;
+      --accent: #58a6ff;
+      --accent-dim: rgba(88, 166, 255, 0.1);
+      --green: #3fb950;
+      --green-dim: rgba(63, 185, 80, 0.1);
+      --red: #f85149;
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Plus Jakarta Sans', sans-serif;
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+
+    .wrapper { max-width: 960px; margin: 0 auto; padding: 48px 24px 80px; }
+
+    header {
+      border-bottom: 1px solid var(--panel-border);
+      padding-bottom: 32px;
+      margin-bottom: 40px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 16px;
+    }
+
+    .brand h1 {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      color: #fff;
+    }
+
+    .brand p {
+      color: var(--text-muted);
+      font-size: 14px;
+      margin-top: 4px;
+    }
+
+    .header-right {
+      display: flex;
+      flex-direction: column;
+      align-items: flex-end;
+      gap: 8px;
+    }
+
+    .badge-status {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 12px;
+      font-weight: 600;
+      padding: 6px 12px;
+      border-radius: 99px;
+      background: var(--green-dim);
+      color: var(--green);
+      border: 1px solid rgba(63, 185, 80, 0.2);
+    }
+
+    .badge-status span { font-size: 16px; }
+
+    .env-badge {
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 11px;
+      color: var(--accent);
+      background: var(--accent-dim);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(88, 166, 255, 0.2);
+    }
+
+    .lead-box {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 36px;
+      font-size: 14px;
+      color: var(--text-muted);
+    }
+
+    .lead-box strong { color: var(--text); }
+
+    h2 {
+      font-size: 18px;
+      font-weight: 700;
+      margin: 36px 0 16px;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    h2 .material-symbols-outlined { color: var(--accent); font-size: 20px; }
+
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--panel-border);
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s ease;
+    }
+
+    .card:hover { border-color: #30363d; }
+
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 12px;
+    }
+
+    .endpoint-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 13px;
+    }
+
+    .method {
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-weight: 700;
+      font-size: 11px;
+    }
+
+    .method.post { background: #1f3b2c; color: var(--green); }
+    .method.get { background: #162a45; color: var(--accent); }
+    .method.delete { background: #3b1f22; color: var(--red); }
+
+    .url { color: var(--text); }
+
+    .card p {
+      color: var(--text-muted);
+      font-size: 13px;
+      margin-bottom: 16px;
+    }
+
+    .code-block {
+      background: var(--code-bg);
+      border: 1px solid #1e2430;
+      border-radius: 6px;
+      padding: 14px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 12px;
+      color: #c9d1d9;
+      overflow-x: auto;
+      margin-bottom: 10px;
+      white-space: pre;
+    }
+
+    .code-label {
+      font-size: 10px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+      display: block;
+      font-weight: 700;
+    }
+
+    footer {
+      margin-top: 60px;
+      text-align: center;
+      font-size: 13px;
+      color: var(--text-muted);
+      border-top: 1px solid var(--panel-border);
+      padding-top: 24px;
+    }
+  </style>
+</head>
+<body>
+  <div class="wrapper">
+    <header>
+      <div class="brand">
+        <h1>JagoMotion API Gateway</h1>
+        <p>Layanan integrasi pengiriman surel dan perpesanan WhatsApp otomatis.</p>
+      </div>
+      <div class="header-right">
+        <div class="badge-status">
+          <span class="material-symbols-outlined">check_circle</span>
+          API Aktif
+        </div>
+        <span class="env-badge" id="host-indicator">Mendeteksi URL...</span>
+      </div>
+    </header>
+
+    <div class="lead-box">
+      Hai, dokumentasi ini aku buat seringkas dan senyaman mungkin untuk kamu integrasikan. Semua contoh cURL di bawah ini sudah otomatis mendeteksi alamat host yang sedang kamu buka (baik di Termux localhost maupun saat deploy di domain Vercel).
+    </div>
+
+    <h2><span class="material-symbols-outlined">mail</span> Layanan Surel (Nodemailer Clean)</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/mail/otp</span>
+        </div>
+      </div>
+      <p>Kirimkan kode OTP verifikasi ke email pengguna dengan tampilan bersih minimalis.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/mail/otp \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026" \
+  -d '{
+    "email": "user@gmail.com",
+    "otp": "492018",
+    "purpose": "Pendaftaran Akun Baru"
+  }'</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/mail/reset-password</span>
+        </div>
+      </div>
+      <p>Kirimkan tautan penyetelan ulang kata sandi yang bersih dan responsif.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/mail/reset-password \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026" \
+  -d '{
+    "email": "user@gmail.com",
+    "resetUrl": "https://jagomotion.com/reset?token=xyz123"
+  }'</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/mail/send</span>
+        </div>
+      </div>
+      <p>Kirim email kustom bebas dengan konten HTML atau teks biasa.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/mail/send \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026" \
+  -d '{
+    "to": "user@gmail.com",
+    "subject": "Pesanan Kamu Sedang Diproses",
+    "html": "&lt;p&gt;Halo, pesanan paket #1029 sedang dalam pengiriman.&lt;/p&gt;"
+  }'</div>
+    </div>
+
+    <h2><span class="material-symbols-outlined">chat</span> Layanan WhatsApp (Baileys Engine)</h2>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/wa/session</span>
+        </div>
+      </div>
+      <p>Hubungkan nomor bot WhatsApp baru dan dapatkan 8-digit Pairing Code.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/wa/session \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026" \
+  -d '{
+    "number": "6283110390167"
+  }'</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/wa/send-otp</span>
+        </div>
+      </div>
+      <p>Kirim kode OTP akun langsung lewat chat WhatsApp bot yang sudah aktif.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/wa/send-otp \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026" \
+  -d '{
+    "senderNumber": "6283110390167",
+    "targetNumber": "6281234567890",
+    "otp": "782103",
+    "appName": "JagoMotion"
+  }'</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/wa/send-message</span>
+        </div>
+      </div>
+      <p>Kirim pesan chat kustom ke nomor WhatsApp pengguna.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/wa/send-message \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026" \
+  -d '{
+    "senderNumber": "6283110390167",
+    "targetNumber": "6281234567890",
+    "message": "Halo! Transaksi berhasil diproses."
+  }'</div>
+    </div>
+
+    <div class="card">
+      <div class="card-header">
+        <div class="endpoint-badge">
+          <span class="method post">POST</span>
+          <span class="url">/api/wa/restart/:number</span>
+        </div>
+      </div>
+      <p>Gunakan endpoint ini untuk memulihkan koneksi bot secara paksa jika socket WhatsApp terasa lag atau macet.</p>
+      <span class="code-label">Contoh Permintaan</span>
+      <div class="code-block">curl -X POST <span class="base-url"></span>/api/wa/restart/6283110390167 \
+  -H "X-API-KEY: JAGOMOTION_SECRET_KEY_2026"</div>
+    </div>
+
+    <footer>
+      JagoMotion Gateway Engine &middot; Dikelola untuk integrasi layanan aplikasi web mandiri.
+    </footer>
+  </div>
+
+  <script>
+    const currentOrigin = window.location.origin;
+    const indicator = document.getElementById('host-indicator');
+    if (indicator) indicator.textContent = currentOrigin;
+
+    document.querySelectorAll('.base-url').forEach(el => {
+      el.textContent = currentOrigin;
+    });
+  </script>
+</body>
+</html>
