@@ -1,17 +1,26 @@
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const fs = require('fs');
 const config = require('./config');
 const mailer = require('./mailer');
-const wa = require('./wa');
 
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(express.static(path.join(__dirname, '../public')));
 
+// Helper untuk lazy-load modul WhatsApp agar Vercel tidak crash saat booting
+let waModule = null;
+function getWa() {
+  if (!waModule) {
+    waModule = require('./wa');
+  }
+  return waModule;
+}
+
+// Middleware API Key
 function apiKeyMiddleware(req, res, next) {
   const key = req.headers['x-api-key'] || req.query.api_key;
   if (!key || key !== config.API_KEY) {
@@ -23,9 +32,32 @@ function apiKeyMiddleware(req, res, next) {
   next();
 }
 
+// Halaman Utama: Sajikan index.html secara aman
+app.get('/', (req, res) => {
+  const possiblePaths = [
+    path.join(__dirname, '../public/index.html'),
+    path.join(process.cwd(), 'public/index.html')
+  ];
+
+  for (const p of possiblePaths) {
+    if (fs.existsSync(p)) {
+      return res.sendFile(p);
+    }
+  }
+
+  res.send(`
+    <body style="background:#090b10;color:#fff;font-family:sans-serif;padding:40px;">
+      <h2>JagoMotion API Gateway Aktif</h2>
+      <p>Server beroperasi normal. File public/index.html tidak ditemukan di jalur deployment.</p>
+    </body>
+  `);
+});
+
+// Endpoint Cek Status Server
 app.get('/api/health', (req, res) => {
   res.json({
     success: true,
+    environment: process.env.VERCEL ? 'vercel-serverless' : 'local-termux',
     message: 'Layanan JagoMotion API beroperasi normal.',
     uptime: process.uptime(),
     timestamp: new Date().toISOString()
@@ -76,7 +108,6 @@ app.post('/api/mail/notify', apiKeyMiddleware, async (req, res) => {
   }
 });
 
-// FITUR BARU: Kirim email kustom bebas
 app.post('/api/mail/send', apiKeyMiddleware, async (req, res) => {
   const { to, subject, html, text } = req.body;
   if (!to || !subject || (!html && !text)) {
@@ -105,6 +136,7 @@ app.post('/api/wa/session', apiKeyMiddleware, async (req, res) => {
   }
 
   try {
+    const wa = getWa();
     const result = await wa.initSession(number);
     return res.json({
       success: true,
@@ -117,14 +149,19 @@ app.post('/api/wa/session', apiKeyMiddleware, async (req, res) => {
 });
 
 app.get('/api/wa/sessions', apiKeyMiddleware, (req, res) => {
-  const list = wa.getAllSessions();
-  res.json({ success: true, total: list.length, sessions: list });
+  try {
+    const wa = getWa();
+    const list = wa.getAllSessions();
+    res.json({ success: true, total: list.length, sessions: list });
+  } catch (err) {
+    res.status(500).json({ success: false, message: err.message });
+  }
 });
 
-// FITUR BARU: Restart koneksi sesi (jika lag / macet)
 app.post('/api/wa/restart/:number', apiKeyMiddleware, async (req, res) => {
   const { number } = req.params;
   try {
+    const wa = getWa();
     const result = await wa.initSession(number);
     return res.json({ success: true, message: 'Sesi berhasil di-restart.', data: result });
   } catch (err) {
@@ -134,11 +171,16 @@ app.post('/api/wa/restart/:number', apiKeyMiddleware, async (req, res) => {
 
 app.delete('/api/wa/session/:number', apiKeyMiddleware, async (req, res) => {
   const { number } = req.params;
-  const deleted = await wa.removeSession(number);
-  if (deleted) {
-    return res.json({ success: true, message: `Sesi nomor ${number} berhasil dihapus.` });
+  try {
+    const wa = getWa();
+    const deleted = await wa.removeSession(number);
+    if (deleted) {
+      return res.json({ success: true, message: `Sesi nomor ${number} berhasil dihapus.` });
+    }
+    return res.status(404).json({ success: false, message: 'Sesi tidak ditemukan.' });
+  } catch (err) {
+    return res.status(500).json({ success: false, message: err.message });
   }
-  return res.status(404).json({ success: false, message: 'Sesi tidak ditemukan.' });
 });
 
 app.post('/api/wa/send-otp', apiKeyMiddleware, async (req, res) => {
@@ -154,6 +196,7 @@ app.post('/api/wa/send-otp', apiKeyMiddleware, async (req, res) => {
   const text = `Halo, berikut adalah kode verifikasi akun ${brand} kamu:\n\n*${otp}*\n\nKode ini berlaku 5 menit. Tolong jangan bagikan kode ini kepada siapa pun.`;
 
   try {
+    const wa = getWa();
     await wa.sendWhatsAppText(senderNumber, targetNumber, text);
     return res.json({ success: true, message: 'Pesan OTP WhatsApp berhasil dikirim.' });
   } catch (err) {
@@ -161,7 +204,6 @@ app.post('/api/wa/send-otp', apiKeyMiddleware, async (req, res) => {
   }
 });
 
-// FITUR BARU: Kirim chat kustom bebas ke nomor WhatsApp
 app.post('/api/wa/send-message', apiKeyMiddleware, async (req, res) => {
   const { senderNumber, targetNumber, message } = req.body;
   if (!senderNumber || !targetNumber || !message) {
@@ -172,6 +214,7 @@ app.post('/api/wa/send-message', apiKeyMiddleware, async (req, res) => {
   }
 
   try {
+    const wa = getWa();
     await wa.sendWhatsAppText(senderNumber, targetNumber, message);
     return res.json({ success: true, message: 'Pesan WhatsApp berhasil dikirim.' });
   } catch (err) {
